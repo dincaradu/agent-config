@@ -87,64 +87,142 @@ See [`spec/models.py`](spec/models.py) for complete definitions.
 
 ## Conversational Spec Gathering (The UX Differentiator)
 
-**Not a form. A conversation.**
+**Not a form. A real conversation with an AI architect.**
 
-```bash
+### The Flow
+
+```
 $ agent-config init
 
-What are you building? One sentence.
-> A tool that syncs Notion databases to Postgres for analytics dashboards.
+┌─────────────────────────────────────────────────────────────┐
+│  "What are you building? Describe it like you're explaining  │
+│   to a senior engineer who'll architect it with you."        │
+└─────────────────────────────────────────────────────────────┘
+> I want a tool that syncs Notion databases to Postgres for 
+> analytics. The Notion side has messy schemas — different 
+> workspaces, inconsistent property types, some databases are 
+> actually views. Postgres side needs clean, typed tables 
+> with proper indexes for analytical queries. It should run 
+> incrementally on a schedule, handle schema drift, and give 
+> me a dashboard to monitor sync health. Team of 2, we use 
+> Cursor and Hermes. Prefer local-first with Ollama.
 
-What type of project?
-[1] SaaS  [2] CLI  [3] API  [4] Internal tool  [5] Mobile
-> 1
+┌─────────────────────────────────────────────────────────────┐
+│  "Got it. Let me dig into a few things..."                   │
+│                                                              │
+│  1. **Sync strategy** — Full refresh or incremental?         │
+│     How do you detect changes in Notion (no webhooks)?       │
+│                                                              │
+│  2. **Schema mapping** — Do you want to define mappings      │
+│     declaratively (YAML) or infer from Notion schema?        │
+│                                                              │
+│  3. **Agent workflows** — When you say "Cursor + Hermes",    │
+│     what should each agent *actually do*?                    │
+│     ▸ Feature agent: write sync logic, handle API quirks     │
+│     ▸ Review agent: check for SQL injection, migration safety│
+│     ▸ Test agent: generate contract tests for Notion API     │
+│     ▸ Research agent: investigate Notion API changes         │
+│     ▸ Docs agent: keep CLAUDE.md / AGENTS.md current         │
+│                                                              │
+│  4. **Conventions** — Any existing patterns in your team?    │
+│     (error handling, logging, config management, testing)    │
+│                                                              │
+│  5. **Pain points to avoid** — What broke in past projects?  │
+│     (rate limits, schema drift, silent failures, ...)        │
+│                                                              │
+│  6. **Memory needs** — Should agents remember:               │
+│     ▸ Notion API quirks across sessions?                     │
+│     ▸ Schema mapping decisions?                              │
+│     ▸ Failed sync debug sessions?                            │
+│                                                              │
+│  7. **Eval criteria** — How do you know the sync works?      │
+│     Row counts? Data fidelity? Latency? Cost per sync?       │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Which AI agent(s) will work on this? (multi-select)
-☑ Hermes   ☑ Cursor   ☐ Claude Code   ☐ Opencode   ☐ Aider
-> hermes,cursor
+**This is a dialogue, not a questionnaire.** The agent:
+- **Listens** to free-form description
+- **Identifies gaps** in the mental model
+- **Asks targeted follow-ups** based on what was said
+- **Proposes structure** ("Here's how I'd model the agent team...")
+- **Confirms understanding** before generating
 
-Team size? (affects agent team topology)
-> 2
+### Three-Phase Architecture
 
-Agent roles needed?
-☑ Orchestrator  ☑ Feature dev  ☑ Code review  ☐ Test gen
-☐ Research  ☐ Docs  ☐ Dependency updates
-> orchestrator,feature,review
+| Phase | Duration | What Happens |
+|-------|----------|--------------|
+| **1. Elicitation** | 3-5 min | User speaks freely → LLM extracts entities, constraints, intent → builds `DraftSpec` with confidence scores |
+| **2. Refinement** | 2-5 min (iterative) | Agent proposes structures, asks focused questions, user corrects/adds → `DraftSpec` updated → diff shown |
+| **3. Confirmation** | 30 sec | Final `ProjectSpec` rendered → user reviews → generates |
 
-Local-first or cloud?
-☑ Local-first (self-hosted)  ☐ Cloud (Vercel, Railway...)
-> local-first
+### Implementation: LLM-Driven Conversation Engine
 
-Tech stack? (I'll infer from your description, correct me)
-Language: Python  Frontend: Next.js  DB: PostgreSQL
-Auth: JWT  Testing: pytest  CI: GitHub Actions
-> confirm
+```python
+# spec/conversation.py
+class ConversationState(BaseModel):
+    turns: list[ConversationTurn] = []
+    draft_spec: Optional[ProjectSpec] = None
+    confidence: dict[str, float] = Field(default_factory=dict)  # field → 0-1
+    pending_questions: list[str] = []
+    phase: Literal["elicitation", "refinement", "confirmation"] = "elicitation"
 
-Existing repo to analyze? (optional)
-> https://github.com/me/old-project  (or skip)
+CONVERSATION_SYSTEM_PROMPT = """
+You are a senior AI architect helping a developer specify an agent configuration.
+Your goal: build a complete ProjectSpec through natural conversation.
 
-Generating configs for Hermes + Cursor...
-✓ AGENTS.md (orchestrator + feature + review)
-✓ memory.json (mem0-local + Qdrant)
-✓ .hermes/rules.md
-✓ .cursorrules
-✓ .cursor/mcp.json
-✓ docker-compose.yml (Ollama, Qdrant, mem0, Postgres)
-✓ eval.yaml (pytest benchmarks per role)
-✓ README.md (verified run commands)
-Done! Output: ./agent-config-output/
+PRINCIPLES:
+- Start with open-ended listening. Let them describe the project fully.
+- Extract: product, tech stack, team, agent roles, conventions, pain points, 
+  infrastructure preferences, memory needs, eval criteria.
+- Ask ONE focused question at a time. No questionnaires.
+- Propose concrete structures: "Based on what you said, I see 3 agent roles..."
+- Track confidence per field. When all > 0.8, offer to generate.
+- Never assume. Clarify ambiguity: "When you say 'local-first', do you mean...?"
+"""
+```
+
+```python
+# spec/extractor.py
+async def extract_spec_from_conversation(
+    conversation: ConversationState
+) -> tuple[ProjectSpec, dict[str, float]]:
+    """Use LLM to extract structured spec from conversation history."""
+    prompt = f"""
+    Conversation history:
+    {format_turns(conversation.turns)}
+    
+    Extract a complete ProjectSpec. Return JSON + confidence per field.
+    """
+    # Call LLM (Hermes/Ollama/local) → parse → validate with Pydantic
+```
+
+### CLI Modes
+
+```bash
+# Mode 1: Conversational (default) — full dialogue
+agent-config init
+
+# Mode 2: Spec file (CI/automation/power users) — skip conversation
+agent-config generate --spec-file agent-config-spec.json
+
+# Mode 3: Hybrid — start from spec, then converse to refine
+agent-config init --spec-file agent-config-spec.json
+
+# Mode 4: Resume previous conversation
+agent-config init --resume
 ```
 
 ### UX Principles
 
 | Principle | Implementation |
 |-----------|----------------|
-| Smart defaults | Infer stack from description; user corrects, not fills |
-| Progressive disclosure | Basic → Advanced (infra, memory, eval) on demand |
-| Validation as you go | Pydantic validates each answer; immediate feedback |
-| Review before generate | Show full `ProjectSpec` summary → confirm |
-| Explain *why* | "We're adding a review agent because teams of 2+ benefit from automated PR reviews" |
-| Save & resume | `ProjectSpec` saved as `agent-config-spec.json` — editable, versionable, shareable |
+| **Free-form first** | Open-ended prompt → LLM extracts structure, not user filling forms |
+| **Targeted follow-ups** | One question at a time, based on gaps in extracted `DraftSpec` |
+| **Propose, don't ask** | "I see 3 agent roles. Add research agent?" vs "Which roles?" |
+| **Confidence tracking** | Per-field confidence → when all > 0.8, offer generation |
+| **Explain *why*** | "Adding review agent because teams of 2+ benefit from automated PR reviews" |
+| **Save & resume** | Full transcript + `DraftSpec` saved as `agent-config-session.json` — editable, versionable, shareable |
+| **Power user escape** | `--spec-file`, `--yes`, `--resume` flags for automation |
 
 ---
 
@@ -246,7 +324,9 @@ class DockerComposeGenerator(Generator):
 agent-config/
 ├── spec/
 │   ├── models.py          # ProjectSpec + all nested models (Pydantic v2)
-│   ├── questions.py       # Conversational flow (Typer + Rich + InquirerPy)
+│   ├── conversation.py    # ConversationState, ConversationTurn, system prompts
+│   ├── extractor.py       # LLM-driven spec extraction from conversation
+│   ├── questions.py       # Fallback structured questions (for --yes mode)
 │   ├── validators.py      # Cross-field validation, inference rules
 │   └── inference.py       # Stack detection from description / repo
 ├── generators/
@@ -278,10 +358,11 @@ agent-config/
 
 | Category | Packages |
 |----------|----------|
-| CLI/UX | `typer`, `rich`, `inquirerpy` |
+| CLI/UX | `typer`, `rich`, `inquirerpy` (fallback mode) |
 | Data | `pydantic`, `pydantic-settings`, `pyyaml`, `tomli-w` |
 | Templates | `jinja2` |
 | Validation | `docker-py` |
+| LLM Client | `ollama-python` (local), `openai` (optional), `anthropic` (optional) |
 | Inference | `githubkit` (optional) |
 | Testing | `pytest`, `pytest-asyncio`, `pytest-mock` |
 
@@ -300,11 +381,13 @@ agent-config/
 
 ### Phase 0: Foundation (Week 1) — **Current**
 - [ ] `spec/models.py` — complete `ProjectSpec` with all nested models
-- [ ] `spec/questions.py` — conversational flow for core fields
+- [ ] `spec/conversation.py` — ConversationState, system prompts, turn management
+- [ ] `spec/extractor.py` — LLM-driven spec extraction from conversation history
+- [ ] `spec/questions.py` — Fallback structured questions (for `--yes` mode)
 - [ ] `generators/registry.py` + `pipeline.py` — generator framework
 - [ ] `generators/docker_compose.py` — working docker-compose.yml (Ollama, Qdrant, mem0, Postgres)
 - [ ] `generators/readme.py` — README with verified commands
-- [ ] `cli.py` — `agent-config init` → spec → generate → validate
+- [ ] `cli.py` — `agent-config init` → conversation → spec → generate → validate
 - [ ] **Dogfood:** Use it to generate AgentConfig's own config
 
 ### Phase 1: Agent Generators (Week 2-3)
@@ -341,7 +424,7 @@ agent-config/
 |---|----------|---------|---------|
 | 1 | **Project name** | `agent-config`, `agentcfg`, `acfg`, `genie`, `architect`, other? | `agent-config` |
 | 2 | **CLI framework** | `typer`, `click`, `argparse` | `typer` |
-| 3 | **Conversational lib** | `inquirerpy`, `questionary`, `prompt_toolkit` | `inquirerpy` |
+| 3 | **Conversation engine** | Local LLM (Ollama/Hermes), API (OpenAI/Anthropic), hybrid | Local-first (Ollama), API fallback |
 | 4 | **Default local LLM** | `llama3.2:latest`, `nemotron3:latest`, `qwen2.5:7b` | `llama3.2:latest` |
 | 5 | **Default embedder** | `nomic-embed-text`, `mxbai-embed-large`, `bge-m3` | `nomic-embed-text` |
 | 6 | **Eval framework** | `pytest`, `vitest`, both, pluggable | `pytest` first, pluggable |
