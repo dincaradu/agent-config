@@ -1,0 +1,54 @@
+# Cursor Rules for test-project
+
+## Project Overview
+- **Product:** A test project for agent configuration generation with enough characters to pass validation
+- **Type:** cli
+- **Team Size:** 2
+
+## Tech Stack
+- **Language:** python
+- **Backend:** fastapi
+- **Database:** postgresql
+- **ORM:** sqlalchemy
+- **Auth:** jwt
+- **Testing:** pytest
+- **CI:** github-actions
+
+## Coding Standards
+- Line length: 100 characters
+- Type hints: Required
+- Docstrings: Google style
+- Error handling: exceptions
+- Logging: structlog at INFO
+
+## Agent Instructions
+
+### When writing code:
+1. Follow the tech stack and conventions above
+2. Use existing patterns in the codebase
+3. Write tests for new functionality
+4. Handle errors explicitly - no bare except
+5. Add type hints to all function signatures
+6. Include google docstrings for public APIs
+
+### When reviewing code:
+1. Check for security issues (SQL injection, XSS, path traversal)
+2. Verify error handling is complete
+3. Ensure tests cover happy path + edge cases
+4. Confirm conventions are followed
+5. Look for performance issues (N+1 queries, memory leaks)
+
+### When generating tests:
+1. Target >80% coverage
+2. Test happy path, error paths, edge cases
+3. Use pytest conventions
+4. Mock external dependencies
+
+## Project-Specific Context
+
+## Commands
+- **Run tests:** `pytest`
+- **Lint:** `ruff check .`
+- **Format:** `ruff format .`
+- **Type check:** `mypy .`
+- **Start dev:** `docker compose up -d`

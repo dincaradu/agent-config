@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "project": "test-project",
+  "model": "llama3.2:latest",
+  "provider": "ollama",
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "model": "llama3.2:latest"
+  },
+  "agents": {
+    "orchestrator": {
+      "enabled": true,
+      "model": "llama3.2:latest"
+    },
+    "feature": {
+      "enabled": true,
+      "model": "llama3.2:latest",
+      "role": "feature"
+    },
+    "review": {
+      "enabled": true,
+      "model": "llama3.2:latest",
+      "role": "review"
+    }
+  },
+  "tools": {
+    "read": true,
+    "write": true,
+    "edit": true,
+    "bash": true,
+    "grep": true,
+    "glob": true,
+    "task": true,
+    "webfetch": true
+  },
+  "permissions": {
+    "read": [
+      "**/*"
+    ],
+    "write": [
+      "**/*"
+    ],
+    "bash": [
+      "*"
+    ]
+  },
+  "memory": {
+    "enabled": true,
+    "provider": "mem0-local",
+    "mem0": {
+      "url": "http://qdrant:6333",
+      "collection": "memories"
+    }
+  }
+}

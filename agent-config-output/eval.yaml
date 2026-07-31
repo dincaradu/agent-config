@@ -1,0 +1,44 @@
+# AgentConfig Evaluation Configuration
+# Project: test-project
+# Generated: 2026-07-31T19:39:52.221033
+
+version: "1.0"
+project: test-project
+framework: pytest
+
+# Global thresholds
+thresholds:
+  default: 0.8
+
+# Benchmarks per agent role
+benchmarks:
+  - name: orchestrator_task_decomposition
+    agent_role: orchestrator
+    test: eval/test_orchestrator.py::test_task_decomposition
+    threshold: 0.85
+    description: Orchestrator correctly breaks down complex tasks
+  - name: feature_code_correctness
+    agent_role: feature
+    test: eval/test_feature_agent.py::test_code_correctness
+    threshold: 0.85
+    description: Feature agent produces syntactically correct code
+  - name: feature_test_coverage
+    agent_role: feature
+    test: eval/test_feature_agent.py::test_has_tests
+    threshold: 0.80
+    description: Feature agent writes tests for new code
+  - name: feature_conventions
+    agent_role: feature
+    test: eval/test_feature_agent.py::test_follows_conventions
+    threshold: 0.90
+    description: Feature agent follows project conventions
+  - name: review_security_detection
+    agent_role: review
+    test: eval/test_review_agent.py::test_detects_security_issues
+    threshold: 0.90
+    description: Review agent catches security vulnerabilities
+  - name: review_correctness
+    agent_role: review
+    test: eval/test_review_agent.py::test_correctness_check
+    threshold: 0.85
+    description: Review agent identifies logic errors

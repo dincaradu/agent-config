@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "project": "test-project",
+  "provider": "mem0-local",
+  "mem0_local": {
+    "ollama_base_url": "http://ollama:11434",
+    "embedder": {
+      "model": "nomic-embed-text",
+      "dimensions": 768
+    },
+    "llm": {
+      "model": "llama3.2:latest"
+    },
+    "vector_store": {
+      "provider": "qdrant",
+      "url": "http://qdrant:6333",
+      "collection": "memories"
+    }
+  },
+  "retention": {
+    "max_memories": 10000,
+    "ttl_days": 365
+  }
+}
