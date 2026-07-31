@@ -232,9 +232,33 @@ agent-config build --spec-file agent-config-spec.json
 | **Confidence tracking** | Per-field confidence → when all > 0.8, offer generation (but wait for user) |
 | **Explain *why*** | "Adding review agent because teams of 2+ benefit from automated PR reviews" |
 | **Spec as artifact** | `ProjectSpec` saved as `agent-config-spec.json` + `README.md` — editable, versionable, shareable |
-| **Git-native** | `git init` on start — every refinement = commit, full history |
+| **Git-native** | `git init` on start — every refinement = commit, full history (see [Git Behavior](#git-behavior)) |
 | **Explicit build gate** | No generation until user says "build it" |
 | **Power user escape** | `--spec-file`, `--yes`, `--resume` flags for automation |
+
+---
+
+### Git Behavior
+
+```
+$ agent-config init
+# 1. Creates project directory (or uses current)
+# 2. git init (skipped if .git already exists)
+# 3. Conversation starts...
+# 4. On first spec draft: writes agent-config-spec.json + README.md → git add + commit "spec: initial project specification"
+# 5. Each refinement: updates spec → git add + commit "refine: adjusted agent roles / added memory config / etc."
+# 6. On 'build it': agent-config build → generates configs → git add + commit "build: generated configs for Hermes, Cursor, Opencode"
+```
+
+| Behavior | v0.1 Implementation |
+|----------|---------------------|
+| **Existing git repo** | Detect `.git` → skip `git init`, commit to current branch |
+| **Commit messages** | Auto-generated with prefix: `spec:`, `refine:`, `build:` — user can `git commit --amend` |
+| **Branches** | Single branch (`main`) — `--branch` flag later |
+| **Remote** | Not in v0.1 — user adds manually |
+| **.gitignore** | Auto-generated: Python + agent-config ignores (`.venv/`, `__pycache__/`, `agent-config-output/`, `.env*`) |
+
+---
 
 ---
 
