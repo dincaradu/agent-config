@@ -16,10 +16,10 @@ docker compose up -d
 ```
 
 This starts:
-- Ollama (LLM) at http://localhost:11434
-- Qdrant (Vector DB) at http://localhost:6333
-- mem0 (Memory) at http://localhost:8000
-- PostgreSQL at localhost:5432
+- Ollama (LLM) at http://ollama:11434
+- Qdrant (Vector DB) at http://qdrant:6333
+- mem0 (Memory) at http://mem0:8000
+- PostgreSQL at postgresql://postgres:postgres@postgres:5432/agent_config
 
 ### Verify Services
 ```bash

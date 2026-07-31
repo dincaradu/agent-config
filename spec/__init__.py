@@ -41,6 +41,17 @@ from spec.models import (
     VectorStoreConfig,
 )
 
+from spec.conversation import (
+    ConversationState,
+    ConversationTurn,
+    ConversationPhase,
+    CONVERSATION_SYSTEM_PROMPT,
+    EXTRACTION_PROMPT,
+    ExtractionResult,
+    extract_spec_from_conversation,
+    merge_spec_data,
+)
+
 __all__ = [
     "ORM",
     "AgentRole",
@@ -78,4 +89,12 @@ __all__ = [
     "TestingFramework",
     "VectorStore",
     "VectorStoreConfig",
+    "ConversationState",
+    "ConversationTurn",
+    "ConversationPhase",
+    "CONVERSATION_SYSTEM_PROMPT",
+    "EXTRACTION_PROMPT",
+    "ExtractionResult",
+    "extract_spec_from_conversation",
+    "merge_spec_data",
 ]

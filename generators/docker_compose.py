@@ -31,6 +31,8 @@ class DockerComposeGenerator(Generator):
 
         # Ollama
         if infra.ollama.enabled:
+            # Inside Docker, use service name; externally use base_url
+            internal_ollama_url = "http://ollama:11434"
             services["ollama"] = {
                 "image": "ollama/ollama:latest",
                 "container_name": f"{project_name}_ollama",
@@ -39,7 +41,7 @@ class DockerComposeGenerator(Generator):
                 "networks": ["agent-config-network"],
                 "restart": "unless-stopped",
                 "healthcheck": {
-                    "test": ["CMD", "curl", "-f", "http://localhost:11434/api/tags"],
+                    "test": ["CMD", "curl", "-f", f"{internal_ollama_url}/api/tags"],
                     "interval": "10s",
                     "timeout": "5s",
                     "retries": 5,
@@ -57,7 +59,7 @@ class DockerComposeGenerator(Generator):
                 "networks": ["agent-config-network"],
                 "restart": "unless-stopped",
                 "healthcheck": {
-                    "test": ["CMD", "curl", "-f", "http://localhost:6333/healthz"],
+                    "test": ["CMD", "curl", "-f", "http://qdrant:6333/healthz"],
                     "interval": "10s",
                     "timeout": "5s",
                     "retries": 5,

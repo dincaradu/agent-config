@@ -199,8 +199,7 @@ class AgentTeam(BaseModel):
 class OllamaConfig(BaseModel):
     """Ollama local LLM configuration."""
     enabled: bool = True
-    host: str = "ollama"
-    port: int = 11434
+    base_url: str = "http://ollama:11434"
     models: list[str] = Field(default_factory=lambda: ["llama3.2:latest", "gemma4:latest"])
     default_model: str = "llama3.2:latest"
     default_embed_model: str = "nomic-embed-text"
@@ -212,6 +211,7 @@ class QdrantConfig(BaseModel):
     host: str = "qdrant"
     port: int = 6333
     grpc_port: int = 6334
+    base_url: str = "http://qdrant:6333"
     collection_prefix: str = "agent-config"
 
 
@@ -221,6 +221,7 @@ class Mem0Config(BaseModel):
     provider: MemoryProvider = MemoryProvider.MEM0_LOCAL
     host: str = "mem0"
     port: int = 8000
+    base_url: str = "http://mem0:8000"
     # mem0-local specific
     ollama_embed_model: str = "nomic-embed-text"
     ollama_llm_model: str = "llama3.2:latest"
@@ -232,6 +233,7 @@ class PostgresConfig(BaseModel):
     enabled: bool = True
     host: str = "postgres"
     port: int = 5432
+    base_url: str = "postgresql://postgres:postgres@postgres:5432/agent_config"
     user: str = "postgres"
     password: str = "postgres"
     database: str = "agent_config"
@@ -242,6 +244,7 @@ class RedisConfig(BaseModel):
     enabled: bool = False
     host: str = "redis"
     port: int = 6379
+    base_url: str = "redis://redis:6379"
 
 
 class MonitoringConfig(BaseModel):

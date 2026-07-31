@@ -498,8 +498,11 @@ agent-config/
 | Competitor adds conversational UI | Low | Medium | Our moat: agent-agnostic + multi-agent + local-first + eval + git-native spec |
 
 ---
+---
 
-## Getting Started (When Ready)
+## Getting Started
+
+**Full usage guide:** [`USAGE.md`](USAGE.md)
 
 ```bash
 # Install (when published)
@@ -525,10 +528,6 @@ agent-config validate --output-dir ./agent-config-output
 # Regenerate after spec changes (conversation or manual edit)
 agent-config build --spec-file agent-config-spec.json --force
 ```
-
----
-
-## Contributing
 
 1. Fork & clone
 2. `uv sync --dev`

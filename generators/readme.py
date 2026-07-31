@@ -49,15 +49,15 @@ class ReadmeGenerator(Generator):
         ]
 
         if spec.infra.ollama.enabled:
-            lines.append("- Ollama (LLM) at http://localhost:11434")
+            lines.append(f"- Ollama (LLM) at {spec.infra.ollama.base_url}")
         if spec.infra.qdrant.enabled:
-            lines.append("- Qdrant (Vector DB) at http://localhost:6333")
+            lines.append(f"- Qdrant (Vector DB) at {spec.infra.qdrant.base_url}")
         if spec.infra.mem0.enabled:
-            lines.append("- mem0 (Memory) at http://localhost:8000")
+            lines.append(f"- mem0 (Memory) at {spec.infra.mem0.base_url}")
         if spec.infra.postgres.enabled:
-            lines.append("- PostgreSQL at localhost:5432")
+            lines.append(f"- PostgreSQL at {spec.infra.postgres.base_url}")
         if spec.infra.redis.enabled:
-            lines.append("- Redis at localhost:6379")
+            lines.append(f"- Redis at {spec.infra.redis.base_url}")
 
         lines.extend([
             "",

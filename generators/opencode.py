@@ -163,7 +163,7 @@ class OpencodeGenerator(Generator):
             "model": spec.infra.ollama.default_model,
             "provider": "ollama",
             "ollama": {
-                "base_url": "http://localhost:11434",
+                "base_url": spec.infra.ollama.base_url,
                 "model": spec.infra.ollama.default_model,
             },
             "agents": {

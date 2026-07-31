@@ -4,7 +4,7 @@
   "model": "llama3.2:latest",
   "provider": "ollama",
   "ollama": {
-    "base_url": "http://localhost:11434",
+    "base_url": "http://ollama:11434",
     "model": "llama3.2:latest"
   },
   "agents": {

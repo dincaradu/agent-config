@@ -1,6 +1,6 @@
 # AgentConfig Generated Docker Compose
 # Project: test-project
-# Generated: 2026-07-31T19:39:52.221033
+# Generated: 2026-07-31T20:57:44.242117
 # 
 # Run: docker compose up -d
 # 
@@ -27,7 +27,7 @@ services:
       - CMD
       - curl
       - -f
-      - http://localhost:11434/api/tags
+      - http://ollama:11434/api/tags
       interval: 10s
       timeout: 5s
       retries: 5
@@ -47,7 +47,7 @@ services:
       - CMD
       - curl
       - -f
-      - http://localhost:6333/healthz
+      - http://qdrant:6333/healthz
       interval: 10s
       timeout: 5s
       retries: 5
