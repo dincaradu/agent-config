@@ -89,14 +89,15 @@ See [`spec/models.py`](spec/models.py) for complete definitions.
 
 **Not a form. A real conversation with an AI architect.**
 
-### The Flow
+### The Flow (Realistic)
 
 ```
 $ agent-config init
 
 ┌─────────────────────────────────────────────────────────────┐
 │  "What are you building? Describe it like you're explaining  │
-│   to a senior engineer who'll architect it with you."        │
+│   to a senior engineer who'll architect it with you.         │
+│   Take your time — this isn't a race."                       │
 └─────────────────────────────────────────────────────────────┘
 > I want a tool that syncs Notion databases to Postgres for 
 > analytics. The Notion side has messy schemas — different 
@@ -141,19 +142,24 @@ $ agent-config init
 ```
 
 **This is a dialogue, not a questionnaire.** The agent:
-- **Listens** to free-form description
+- **Listens** to free-form description (as long as you need)
 - **Identifies gaps** in the mental model
 - **Asks targeted follow-ups** based on what was said
 - **Proposes structure** ("Here's how I'd model the agent team...")
 - **Confirms understanding** before generating
+- **Writes the spec to disk** (`agent-config-spec.json` + `README.md`)
+- **Initializes git** — every refinement is a commit
+- **Only generates when you say "build it"**
 
-### Three-Phase Architecture
+### Three-Phase Architecture (No Time Limit)
 
-| Phase | Duration | What Happens |
-|-------|----------|--------------|
-| **1. Elicitation** | 3-5 min | User speaks freely → LLM extracts entities, constraints, intent → builds `DraftSpec` with confidence scores |
-| **2. Refinement** | 2-5 min (iterative) | Agent proposes structures, asks focused questions, user corrects/adds → `DraftSpec` updated → diff shown |
-| **3. Confirmation** | 30 sec | Final `ProjectSpec` rendered → user reviews → generates |
+| Phase | What Happens |
+|-------|--------------|
+| **1. Elicitation** | User speaks freely — as long as needed. LLM extracts entities, constraints, intent → builds `DraftSpec` with confidence scores. No rush. |
+| **2. Refinement** | Iterative loops: Agent proposes structures, asks focused questions, user corrects/adds → `DraftSpec` updated → diff shown. Repeat until user says "that's it." |
+| **3. Confirmation** | Final `ProjectSpec` rendered → user reviews → generates. |
+
+**This mirrors our conversation:** hours of dialogue → written spec (README) → git repo → iterative refinement → build when ready.
 
 ### Implementation: LLM-Driven Conversation Engine
 
@@ -199,29 +205,35 @@ async def extract_spec_from_conversation(
 ### CLI Modes
 
 ```bash
-# Mode 1: Conversational (default) — full dialogue
+# Mode 1: Conversational (default) — full dialogue, writes spec, initializes git
 agent-config init
 
-# Mode 2: Spec file (CI/automation/power users) — skip conversation
+# Mode 2: Spec file (CI/automation) — generate from existing spec
 agent-config generate --spec-file agent-config-spec.json
 
 # Mode 3: Hybrid — start from spec, then converse to refine
 agent-config init --spec-file agent-config-spec.json
 
-# Mode 4: Resume previous conversation
+# Mode 4: Resume previous conversation in this directory
 agent-config init --resume
+
+# Mode 5: Explicit build gate — only generate, no conversation
+agent-config build --spec-file agent-config-spec.json
 ```
 
 ### UX Principles
 
 | Principle | Implementation |
 |-----------|----------------|
+| **No time pressure** | Conversation takes as long as needed — hours if that's what it takes |
 | **Free-form first** | Open-ended prompt → LLM extracts structure, not user filling forms |
 | **Targeted follow-ups** | One question at a time, based on gaps in extracted `DraftSpec` |
 | **Propose, don't ask** | "I see 3 agent roles. Add research agent?" vs "Which roles?" |
-| **Confidence tracking** | Per-field confidence → when all > 0.8, offer generation |
+| **Confidence tracking** | Per-field confidence → when all > 0.8, offer generation (but wait for user) |
 | **Explain *why*** | "Adding review agent because teams of 2+ benefit from automated PR reviews" |
-| **Save & resume** | Full transcript + `DraftSpec` saved as `agent-config-session.json` — editable, versionable, shareable |
+| **Spec as artifact** | `ProjectSpec` saved as `agent-config-spec.json` + `README.md` — editable, versionable, shareable |
+| **Git-native** | `git init` on start — every refinement = commit, full history |
+| **Explicit build gate** | No generation until user says "build it" |
 | **Power user escape** | `--spec-file`, `--yes`, `--resume` flags for automation |
 
 ---
@@ -439,12 +451,15 @@ agent-config/
 
 | Metric | Target |
 |--------|--------|
-| Time to first config | < 2 minutes (init → generate → `docker compose up`) |
-| Generated docker-compose | `docker compose up -d` → all services healthy on first try |
-| Agent coverage | 3 agents (Hermes, Cursor, Opencode) with distinct, correct configs |
-| Spec completeness | Single `agent-config init` captures everything needed |
-| Dogfooding | AgentConfig's own config generated by AgentConfig |
-| Zero manual edits | Generated files work without post-generation fixes |
+| **Conversation depth** | Handles hours-long dialogue → complete spec (like this one) |
+| **Spec artifact quality** | `agent-config-spec.json` + `README.md` capture full intent |
+| **Git history** | Every refinement = commit, full traceability |
+| **Build gate** | Zero generation until explicit `agent-config build` |
+| **Generated docker-compose** | `docker compose up -d` → all services healthy on first try |
+| **Agent coverage** | 3 agents (Hermes, Cursor, Opencode) with distinct, correct configs |
+| **Spec completeness** | Single `agent-config init` session captures everything needed |
+| **Dogfooding** | AgentConfig's own config generated by AgentConfig |
+| **Zero manual edits** | Generated files work without post-generation fixes |
 
 ---
 
@@ -454,9 +469,9 @@ agent-config/
 |------|------------|--------|------------|
 | Agent config formats change frequently | High | Medium | Versioned generators; auto-update check; template override system |
 | Docker-compose too opinionated | Medium | High | Make infra fully configurable in `ProjectSpec.infra` |
-| Conversational UX feels slow for power users | Medium | Medium | `--spec-file` flag to skip interview; `--yes` for defaults |
+| Conversation goes too long / scope drift | Medium | Medium | Confidence tracking + explicit build gate keeps focus; `--yes` for shortcuts |
 | Scope creep | High | High | Strict phase gates; v0.1 = CLI only |
-| Competitor adds conversational UI | Low | Medium | Our moat: agent-agnostic + multi-agent + local-first + eval |
+| Competitor adds conversational UI | Low | Medium | Our moat: agent-agnostic + multi-agent + local-first + eval + git-native spec |
 
 ---
 
@@ -468,17 +483,23 @@ pipx install agent-config
 # or
 uvx agent-config init
 
-# Generate configs for your project
+# Start a new project — conversational spec gathering
+# - Free-form dialogue with AI architect
+# - Writes agent-config-spec.json + README.md
+# - Initializes git repo with spec history
 agent-config init
 
-# Use existing spec file (skip interview)
-agent-config generate --spec-file agent-config-spec.json
+# Resume conversation in existing project directory
+agent-config init --resume
+
+# Generate from existing spec (CI, automation, or after "build it")
+agent-config build --spec-file agent-config-spec.json
 
 # Validate generated configs
 agent-config validate --output-dir ./agent-config-output
 
-# Regenerate after spec changes
-agent-config generate --spec-file agent-config-spec.json --force
+# Regenerate after spec changes (conversation or manual edit)
+agent-config build --spec-file agent-config-spec.json --force
 ```
 
 ---
